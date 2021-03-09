@@ -1,0 +1,88 @@
+﻿@page "/dettagliodocente/{Id:int}"
+
+@using System;
+@using BlazorAppFITSTIC.Data
+@using BlazorAppFITSTIC.Repository
+@using System.Linq
+@inject TeacherService ts
+@inject CourseService cs
+<h3>Dettaglio Docente</h3>
+
+<div class="alert alert-danger @(showError ? "d-block" : "d-none")">
+    <p>
+        Errore: docente non trovato.
+    </p>
+</div>
+<div class="alert alert-success @(showSuccess? "d-block" : "d-none")">
+    <p>
+        Elemento modificato con SUCCESSO.
+    </p>
+</div>
+
+<div class="row">
+    <div class="col">
+        @if (t != null)
+        {
+            <label>Id</label>
+            <span class="ml-2">@t.Id</span>
+            <br />
+            <label>Data inserimento</label>
+            <span class="ml-2">@t.Inserimento.ToString()</span>
+            <br />
+            <label>Nome</label>
+            <input type="text" @bind-value="t.Nome" class="form-control" />
+
+            <label>Cognome</label>
+            <input type="text" @bind-value="t.Cognome" class="form-control" />
+
+            <label>Data di nascita</label>
+            <input type="date" @bind-value="t.Data_Nascita" class="form-control" />
+
+            <label>Materia</label>
+            <input type="text" @bind-value="t.Materia" class="form-control" />
+
+            <button class="btn btn-outline-primary" @onclick="SaveTeacher">Salva</button>
+
+        }
+    </div>
+    <div class="col">
+        <ul>
+           @foreach (var item in t.Corsi)
+           {
+               <li>@item.Nome</li>
+           }
+        </ul>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    bool showSuccess;
+    bool showError = false;
+
+    Teacher t;
+    List<Teacher> lt;
+    List<Course> lc;
+
+    protected override async Task OnInitializedAsync()
+    {
+        lt = await ts.GetTeachers();
+        t = lt.FirstOrDefault(te => te.Id == Id);
+        if (t == null)
+        {
+            showError = true;
+        }
+        else
+        {
+            lc = await cs.GetCourses();
+        }
+    }
+
+    async Task SaveTeacher()
+    {
+        showSuccess = true;
+        await ts.UpdateTeacher(t);
+    }
+}

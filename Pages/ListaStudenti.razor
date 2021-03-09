@@ -1,0 +1,82 @@
+﻿@page "/listastudenti"
+
+@using BlazorAppFITSTIC.Data
+@using BlazorAppFITSTIC.Repository
+@inject StudentService ss
+
+<h3>Lista studenti</h3>
+
+<div class="row">
+    <div class="col">
+        <input type="search" @bind-value="query" class="form-control" />
+    </div>
+    <div class="col">
+        <button class="btn btn-outline-primary"  @onclick="SearchStudent">Cerca</button>
+    </div>
+</div>
+
+
+
+@if (students == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Cognome</th>
+                <th>Nascita</th>
+                <th>Iscrizione</th>
+                <th>Corsi</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var s in students)
+            {
+            <tr>
+                <td>@s.Nome</td>
+                <td>@s.Cognome</td>
+                <td>@s.Nascita.ToShortDateString()</td>
+                <td>@s.AnnoIscrizione</td>
+                <td>@s.Corsi.Count</td>
+                <td>
+                    <a href="/dettagliostudente/@s.Id" class="btn btn-outline-info">Modifica</a>
+                    <button class="btn btn-outline-danger" @onclick="_ => DeleteStudentAsync(s)">Elimina</button>
+                </td>
+            </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<Student> students;
+    private string query;
+
+    protected override async Task OnInitializedAsync()
+    {
+        students = await ss.GetStudents();
+    }
+
+    async Task DeleteStudentAsync(Student s)
+    {
+        students.Remove(s);
+        await ss.Remove(s);
+    }
+
+    async Task SearchStudent()
+    {
+        students = await ss.GetStudents();
+
+        students = students
+            .Where(s => s.Nome.Contains(query, StringComparison.OrdinalIgnoreCase) || 
+            s.Cognome.Contains(query, StringComparison.OrdinalIgnoreCase) || 
+            s.AnnoIscrizione.ToString() == query).ToList();
+    }
+
+
+}

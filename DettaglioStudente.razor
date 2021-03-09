@@ -1,0 +1,153 @@
+﻿@page "/dettagliostudente/{Id:int}"
+
+@using BlazorAppFITSTIC.Data
+@using BlazorAppFITSTIC.Repository
+@using System.Linq
+@inject StudentService ss
+@inject CourseService cs
+
+<h3>DettaglioStudente</h3>
+
+<div class="alert alert-danger @(showError ? "d-block" : "d-none")">
+    <p>
+        Errore: studente non trovato.
+    </p>
+</div>
+
+<div class="alert alert-success @(aggiungi ? "d-block" : "d-none")">
+    <p>
+        Corso aggiunto con SUCCESSO.
+    </p>
+</div>
+
+<div class="alert alert-success @(salva? "d-block" : "d-none")">
+    <p>
+        Elemento modificato con SUCCESSO.
+    </p>
+</div>
+
+
+<div class="row">
+    <div class="col">
+        @if (s != null)
+        {
+        <form>
+            <label for="id">Id</label>
+            <span class="ml-2" id="id">@s.Id</span>
+            <br />
+            <label for="inserimento">Data inserimento</label>
+            <span class="ml-2" id="inserimento">@s.Inserimento.ToString()</span>
+            <br />
+            <label for="nome">Nome</label>
+            <input type="text" @bind-value="s.Nome" class="form-control" id="nome" />
+
+            <label for="cognome">Cognome</label>
+            <input type="text" @bind-value="s.Cognome" class="form-control" id="cognome" />
+
+            <label for="nascita">Data di nascita</label>
+            <input type="date" @bind-value="s.Nascita" class="form-control" id="nascita" />
+
+            <label for="iscrizione">Anno iscrizione</label>
+            <input type="number" @bind-value="s.AnnoIscrizione" class="form-control" id="iscrizione" />
+
+            @if (csAviable != null)
+            {
+                <div class="row">
+                    <div class="col">
+                        <label for="cors">Corsi</label>
+                        <select id="cors" class="form-control" @bind-value="selectID" @bind-value:event="onchange">
+                            <option value="-1">Seleziona un corso</option>
+                            @foreach (Course i in csAviable)
+                            {
+                                <option value="@i.Id">@i.Nome</option>
+                            }
+                        </select>                        
+                    </div>
+                    <div class="col">
+                        <span class="oi oi-plus " @onclick="Add_Course"></span>
+                    </div>
+                </div>
+            }
+
+        </form>
+            <br />
+
+            
+            <button class="btn btn-outline-primary" @onclick="SaveStudent">Salva</button>
+        }
+    </div>
+    <div class="col">
+       @if (csStudent != null)
+       {
+          <label>Iscrizioni</label>
+          <ul>
+          @foreach (Course c in csStudent)
+          {
+              <li>
+              @c.Nome
+              <span class="oi oi-circle-x" @onclick="_ => Delete_Course(c)"></span>
+              </li>
+          }
+          </ul>
+       }
+    </div>
+</div>
+
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    bool showError = false;
+    private Student s;
+    private Course c;
+    private List<Student> ls;
+    int selectID = -1;
+    private List<Course> lc, csAviable, csStudent;
+    bool aggiungi, salva;
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        ls = await ss.GetStudents();
+        s = ls.FirstOrDefault(st => st.Id == Id);
+        if (s == null)
+        {
+            showError = true;
+        }
+        else
+        {
+            lc = await cs.GetCourses();
+            csStudent = lc.Where(x => s.Corsi.Contains(x)).ToList();
+            csAviable = lc.Except(csStudent).ToList();
+        }
+
+    }
+
+    async Task SaveStudent()
+    {
+        await ss.UpdateStudent(s);
+        await cs.UpdateCourse(c);
+        salva = true;
+        aggiungi = false;
+    }
+
+    void Add_Course()
+    {
+        c = lc.Find(x => x.Id == selectID);
+        c.Students.Add(s);
+        csStudent.Add(c);
+        s.Corsi.Add(c);
+        csAviable.Remove(c);
+        aggiungi = true;
+        selectID = -1;
+    }
+
+    void Delete_Course(Course c)
+    {
+        csStudent.Remove(c);
+        csAviable.Add(c);
+        s.Corsi.Remove(c);
+        c.Students.Remove(s);
+    }
+}

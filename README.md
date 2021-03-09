@@ -1,2 +1,2 @@
 # total_repository
-This repository is a warehouse for my little script every programming language
+My first SPA in Blazor with .NET 5
